@@ -20,9 +20,14 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; marg
   min-width: 160px;
   box-shadow: 0 6px 22px rgba(0,0,0,0.25);
 }
+#botRiskOverlay.risk-low { background: rgba(20,20,20,0.86); }
+#botRiskOverlay.risk-mid { background: rgba(196, 108, 0, 0.92); }
+#botRiskOverlay.risk-high { background: rgba(160, 15, 15, 0.92); }
 #botRiskOverlay .label { font-size: 12px; opacity: 0.8; }
 #botRiskOverlay .value { font-size: 28px; font-weight: 700; margin-top: 2px; }
+#botRiskOverlay .status { font-size: 12px; margin-top: 4px; }
 #botRiskOverlay .meta { font-size: 11px; opacity: 0.75; margin-top: 6px; }
+#botRiskOverlay .signals { font-size: 11px; opacity: 0.85; margin-top: 6px; }
 
 
 #botRiskOverlay .hist-title {
