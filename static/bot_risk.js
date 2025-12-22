@@ -1,6 +1,9 @@
 /* BotRisk v2: click-driven scoring + 10s rolling window + idle auto-update + history */
 
 const BotRisk = (() => {
+  const botdAgentPromise = import("https://openfpcdn.io/botd/v2").then((Botd) => Botd.load());
+  let botdResultPromise = null;
+
   function nowMs() { return performance.now(); }
 
   function quantile(arr, q) {
@@ -124,6 +127,9 @@ const BotRisk = (() => {
       scoreEndpoint,
       overlayProbEl,
       overlayMetaEl,
+      overlaySignalsEl,
+      overlayStatusEl,
+      overlayEl,
 
       // NEW behavior knobs
       target = window,
@@ -191,6 +197,75 @@ const BotRisk = (() => {
       }
     }
 
+    function updateRiskClass(prob) {
+      if (!overlayEl) return;
+      overlayEl.classList.remove("risk-low", "risk-mid", "risk-high");
+      if (prob >= 0.7) {
+        overlayEl.classList.add("risk-high");
+      } else if (prob >= 0.5) {
+        overlayEl.classList.add("risk-mid");
+      } else {
+        overlayEl.classList.add("risk-low");
+      }
+    }
+
+    function renderSignals(signals) {
+      if (!overlaySignalsEl) return "";
+      overlaySignalsEl.innerHTML = "";
+
+      const lines = [];
+
+      if (signals.botd_v2) {
+        const botdPct = Math.round(signals.botd_v2.score * 100);
+        const kind = signals.botd_v2.raw?.kind;
+        lines.push(`BotD: ${botdPct}%${kind ? ` (kind=${kind})` : ""}`);
+      }
+      if (signals.mouse_heuristic_v1) {
+        const mousePct = Math.round(signals.mouse_heuristic_v1.score * 100);
+        lines.push(`Mouse: ${mousePct}%`);
+      }
+
+      lines.forEach((text) => {
+        const row = document.createElement("div");
+        row.textContent = text;
+        overlaySignalsEl.appendChild(row);
+      });
+
+      return lines.join(", ");
+    }
+
+    function updateStatus(prob, signals) {
+      if (!overlayStatusEl) return "";
+      let message = "Low bot risk";
+
+      if (prob >= 0.7) {
+        message = "High bot risk";
+      } else if (prob >= 0.5) {
+        message = "Elevated bot risk";
+      }
+
+      const botdBot = signals.botd_v2?.raw?.bot === true;
+      if (botdBot) {
+        const kind = signals.botd_v2.raw?.kind || "unknown";
+        message = `${message} — Automation detected: ${kind}`;
+      }
+
+      overlayStatusEl.textContent = message;
+      return message;
+    }
+
+    function ensureBotdResult() {
+      if (!botdResultPromise) {
+        botdResultPromise = botdAgentPromise
+          .then((agent) => agent.detect())
+          .catch((err) => {
+            console.warn("BotD detect failed", err);
+            return null;
+          });
+      }
+      return botdResultPromise;
+    }
+
     async function scoreNow(reason) {
       if (scoring) return;
       scoring = true;
@@ -205,13 +280,25 @@ const BotRisk = (() => {
         const features = computeFeatures(w);
         if (!features) return;
 
-        const out = await postJSON(scoreEndpoint, features);
+        const botd = await ensureBotdResult();
+        const payload = {
+          ...features,
+          botd_bot: botd?.bot ?? null,
+          botd_kind: botd?.bot ? (botd.botKind ?? "unknown") : null,
+        };
+
+        const out = await postJSON(scoreEndpoint, payload);
         const pct = Math.round(out.bot_probability * 100);
 
         if (overlayProbEl) overlayProbEl.textContent = `${pct}%`;
         if (overlayMetaEl) overlayMetaEl.textContent = `${out.model} | raw=${out.raw_score.toFixed(3)} | w=${w.length}`;
 
-        pushHistory(pct, out.model, out.raw_score, reason);
+        const signalSummary = renderSignals(out.signals || {});
+        updateRiskClass(out.bot_probability);
+        updateStatus(out.bot_probability, out.signals || {});
+
+        const historyReason = signalSummary ? `${reason} | ${signalSummary}` : reason;
+        pushHistory(pct, out.model, out.raw_score, historyReason);
 
         lastScoreAt = nowMs();
       } finally {
@@ -254,6 +341,8 @@ const BotRisk = (() => {
 
     // First feedback: show “waiting”
     if (overlayMetaEl) overlayMetaEl.textContent = `waiting for activity… (window=${Math.round(horizonMs/1000)}s)`;
+    if (overlayStatusEl) overlayStatusEl.textContent = "Low bot risk";
+    updateRiskClass(0);
   }
 
   return { start };

@@ -18,7 +18,11 @@
   <div id="botRiskOverlay">
     <div class="label">Bot probability</div>
     <div class="value" id="botProb">--%</div>
+    <div class="status" id="botStatus">Low bot risk</div>
     <div class="meta" id="botMeta"></div>
+    <div class="signals" id="botSignals"></div>
+    <div class="hist-title">History</div>
+    <div id="botRiskHistory"></div>
   </div>
 
   <script src="/static/bot_risk.js"></script>
@@ -27,6 +31,9 @@
       scoreEndpoint: "/api/score",
       overlayProbEl: document.getElementById("botProb"),
       overlayMetaEl: document.getElementById("botMeta"),
+      overlaySignalsEl: document.getElementById("botSignals"),
+      overlayStatusEl: document.getElementById("botStatus"),
+      overlayEl: document.getElementById("botRiskOverlay"),
       historyEl: document.getElementById("botRiskHistory"),
       target: document.getElementById("playground"),
       horizonMs: 10000,
