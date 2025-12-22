@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from collections import deque
 from pathlib import Path
-from typing import Any, Dict, Optional
+import threading
+import time
+from typing import Any, Deque, Dict, Optional
 
 from fastapi import FastAPI
+from fastapi import Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -43,8 +47,13 @@ class FeaturePayload(BaseModel):
     botd_bot: Optional[bool] = None
     botd_kind: Optional[str] = None
 
+    session_id: Optional[str] = None
+    reason: Optional[str] = None
+
 
 aggregator = Aggregator([HeuristicMouseV1(), BotdV2()])
+telemetry_events: Deque[Dict[str, Any]] = deque(maxlen=200)
+telemetry_lock = threading.Lock()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -60,4 +69,29 @@ def health() -> Dict[str, Any]:
 
 @app.post("/api/score")
 def score(payload: FeaturePayload) -> Dict[str, Any]:
-    return aggregator.score(payload)
+    result = aggregator.score(payload)
+    session_id = payload.session_id or "default"
+    event = {
+        "ts": time.time(),
+        "session_id": session_id,
+        "reason": payload.reason,
+        "bot_probability": result["bot_probability"],
+        "model": result["model"],
+        "raw_score": result["raw_score"],
+        "signals": result.get("signals"),
+    }
+    with telemetry_lock:
+        telemetry_events.append(event)
+    return result
+
+
+@app.get("/api/telemetry")
+def telemetry(
+    session_id: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=200),
+) -> list[Dict[str, Any]]:
+    with telemetry_lock:
+        events = list(telemetry_events)
+    if session_id:
+        events = [event for event in events if event.get("session_id") == session_id]
+    return events[-limit:]
