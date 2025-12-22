@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bot risk game POC</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="game">
+    <h1>Demo "jeu navigateur"</h1>
+    <p>Déplace la souris, clique, joue quelques secondes. L’overlay affiche un risk score.</p>
+    <p>
+      <button id="collectHuman">Collect human sample</button>
+      <span id="collectStatus"></span>
+    </p>
+    <div class="playground" id="playground">
+      Zone de jeu (bouge/clic ici)
+    </div>
+  </div>
+
+  <div id="botRiskOverlay">
+    <div class="label">Bot probability</div>
+    <div class="value" id="botProb">--%</div>
+    <div class="meta" id="botMeta"></div>
+  </div>
+
+  <script src="/static/bot_risk.js"></script>
+  <script>
+    BotRisk.start({
+      scoreEndpoint: "/api/score",
+      collectHumanEndpoint: "/api/collect/human",
+      overlayProbEl: document.getElementById("botProb"),
+      overlayMetaEl: document.getElementById("botMeta"),
+      collectBtn: document.getElementById("collectHuman"),
+      collectStatusEl: document.getElementById("collectStatus"),
+      // tu peux restreindre la collecte à une zone:
+      target: document.getElementById("playground"),
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
+#game { padding: 16px; }
+.playground {
+  margin-top: 12px;
+  height: 360px;
+  border: 2px dashed #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+#botRiskOverlay {
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  background: rgba(20,20,20,0.86);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  min-width: 160px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+#botRiskOverlay .label { font-size: 12px; opacity: 0.8; }
+#botRiskOverlay .value { font-size: 28px; font-weight: 700; margin-top: 2px; }
+#botRiskOverlay .meta { font-size: 11px; opacity: 0.75; margin-top: 6px; }
+#collectStatus { margin-left: 10px; font-size: 12px; opacity: 0.8; }
