@@ -214,8 +214,6 @@ const BotRisk = (() => {
         pushHistory(pct, out.model, out.raw_score, reason);
 
         lastScoreAt = nowMs();
-      } catch (err) {
-        if (overlayMetaEl) overlayMetaEl.textContent = `score error: ${err.message}`;
       } finally {
         scoring = false;
       }
