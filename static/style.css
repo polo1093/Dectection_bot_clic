@@ -19,6 +19,9 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; marg
   border-radius: 10px;
   min-width: 160px;
   box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 28px);
 }
 #botRiskOverlay.risk-low { background: rgba(20,20,20,0.86); }
 #botRiskOverlay.risk-mid { background: rgba(196, 108, 0, 0.92); }
@@ -38,7 +41,8 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; marg
 
 #botRiskHistory {
   margin-top: 6px;
-  max-height: 160px;
+  flex: 1;
+  max-height: none;
   overflow: auto;
   font-size: 11px;
   line-height: 1.25;
