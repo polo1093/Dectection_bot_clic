@@ -8,13 +8,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Tuple
 
 import requests
-
-try:
-    from human_mouse import MouseController
-except ImportError as exc:
-    raise SystemExit(
-        "human-mouse is required. Install it with: pip install human-mouse"
-    ) from exc
+from pyclick import HumanClicker
 
 
 def parse_region(value: str) -> Tuple[int, int, int, int]:
@@ -95,15 +89,16 @@ def main() -> None:
     print("Focus the browser window now...")
     time.sleep(args.focus_wait)
 
-    mouse = MouseController(always_zigzag=True)
+    clicker = HumanClicker()
     scores = []
 
     for idx in range(1, args.n_clicks + 1):
         x, y = random_point(region)
         speed_factor = random.uniform(args.min_speed_factor, args.max_speed_factor)
-        mouse.move(x, y, speed_factor=speed_factor)
+        duration = 1.0 / speed_factor
+        clicker.move((x, y), duration)
         time.sleep(random.uniform(0.05, 0.2))
-        mouse.perform_click()
+        clicker.click()
         time.sleep(random.uniform(args.post_wait_min, args.post_wait_max))
 
         event = fetch_latest_event(args.base_url, session_id, limit=5)

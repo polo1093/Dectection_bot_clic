@@ -49,12 +49,12 @@ Ou directement via Uvicorn :
 uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
-## Test humain (human-mouse)
+## Test humain (pyclick)
 
 Installer les dépendances du script :
 
 ```bash
-pip install human-mouse requests
+pip install pyclick requests
 ```
 
 Lancer le script (après avoir ouvert la page du jeu dans le navigateur) :
