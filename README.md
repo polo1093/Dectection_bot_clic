@@ -49,6 +49,24 @@ Ou directement via Uvicorn :
 uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
+## Test humain (human-mouse)
+
+Installer les dépendances du script :
+
+```bash
+pip install human-mouse requests
+```
+
+Lancer le script (après avoir ouvert la page du jeu dans le navigateur) :
+
+```bash
+python tools/human_mouse_test.py --region 100,200,900,800 --n-clicks 5
+```
+
+`REGION` correspond à la zone cliquable du jeu (coordonnées écran `x1,y1,x2,y2`).
+Pour calibrer, utilisez un outil d’info de coordonnées de souris de votre OS ou un overlay de debug,
+et assurez-vous que la zone couvre uniquement la zone de jeu.
+
 ## Limitations / false positives
 
 - BotD cible surtout l’automation (Selenium/WebDriver, headless, etc.), mais certains environnements verrouillés
@@ -60,5 +78,6 @@ uvicorn app:app --reload --host 127.0.0.1 --port 8000
 
 - `POST /api/score` : scoring heuristique.
 - `GET /api/health` : healthcheck.
+- `GET /api/telemetry?session_id=...&limit=...` : derniers scores (liste JSON).
 
 Aucun endpoint `/api/train` ou `/api/collect/human` n’est fourni ni requis.
