@@ -29,14 +29,16 @@
   <script>
     BotRisk.start({
       scoreEndpoint: "/api/score",
-      collectHumanEndpoint: "/api/collect/human",
       overlayProbEl: document.getElementById("botProb"),
       overlayMetaEl: document.getElementById("botMeta"),
-      collectBtn: document.getElementById("collectHuman"),
-      collectStatusEl: document.getElementById("collectStatus"),
-      // tu peux restreindre la collecte à une zone:
+      historyEl: document.getElementById("botRiskHistory"),
       target: document.getElementById("playground"),
+      horizonMs: 10000,
+      idleUpdateMs: 10000,
+      minPoints: 15
     });
   </script>
+
+
 </body>
 </html>

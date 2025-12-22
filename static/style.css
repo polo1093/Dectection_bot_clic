@@ -24,3 +24,25 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; marg
 #botRiskOverlay .value { font-size: 28px; font-weight: 700; margin-top: 2px; }
 #botRiskOverlay .meta { font-size: 11px; opacity: 0.75; margin-top: 6px; }
 #collectStatus { margin-left: 10px; font-size: 12px; opacity: 0.8; }
+
+
+#botRiskOverlay .hist-title {
+  margin-top: 10px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+#botRiskHistory {
+  margin-top: 6px;
+  max-height: 160px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.25;
+  opacity: 0.9;
+}
+
+.botrisk-history-line {
+  padding: 2px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
