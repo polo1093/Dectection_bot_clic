@@ -138,7 +138,7 @@ const BotRisk = (() => {
       idleUpdateMs = 10_000,     // si aucun clic depuis last update => auto-update après 10s
       housekeepingEveryMs = 500, // purge buffer
       historyEl = null,          // <ul> ou <div> qui reçoit l'historique
-      historyMax = 12,           // nb max de lignes
+      historyMax = 40,           // nb max de lignes
 
     } = opts;
 
