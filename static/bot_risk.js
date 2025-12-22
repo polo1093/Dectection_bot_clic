@@ -195,6 +195,8 @@ const BotRisk = (() => {
       while (historyEl.children.length > historyMax) {
         historyEl.removeChild(historyEl.lastChild);
       }
+
+      historyEl.scrollTop = historyEl.scrollHeight;
     }
 
     function updateRiskClass(prob) {
