@@ -6,6 +6,13 @@ const BotRisk = (() => {
 
   function nowMs() { return performance.now(); }
 
+  function createSessionId() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
   function quantile(arr, q) {
     if (!arr.length) return 0;
     const a = [...arr].sort((x, y) => x - y);
@@ -146,6 +153,7 @@ const BotRisk = (() => {
     let lastScoreAt = 0;
     let lastClickAt = 0;
     let scoring = false;
+    const sessionId = createSessionId();
 
     function prune() {
       const t = nowMs();
@@ -287,6 +295,8 @@ const BotRisk = (() => {
           ...features,
           botd_bot: botd?.bot ?? null,
           botd_kind: botd?.bot ? (botd.botKind ?? "unknown") : null,
+          session_id: sessionId,
+          reason,
         };
 
         const out = await postJSON(scoreEndpoint, payload);
