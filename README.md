@@ -11,6 +11,9 @@ Le score est recalculé :
 
 > Ce projet est un POC “risk scoring” (probabiliste), pas un anti-cheat certifiant.
 
+**NO TRAINING** : pas de pipeline d’entraînement, pas de datasets, pas de modèles ML sauvegardés.
+Seules des heuristiques locales sont utilisées côté API.
+
 ---
 
 ## Principes produit
@@ -30,3 +33,23 @@ python -m venv .venv
 # Linux/mac:
 # source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+## Lancer le serveur
+
+```bash
+python run_server.py
+```
+
+Ou directement via Uvicorn :
+
+```bash
+uvicorn app:app --reload --host 127.0.0.1 --port 8000
+```
+
+## API
+
+- `POST /api/score` : scoring heuristique.
+- `GET /api/health` : healthcheck.
+
+Aucun endpoint `/api/train` ou `/api/collect/human` n’est fourni ni requis.
