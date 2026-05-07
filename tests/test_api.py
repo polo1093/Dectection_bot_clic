@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -98,3 +99,68 @@ def test_score_rejects_invalid_payload(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_lists_mouse_programs(client: TestClient) -> None:
+    response = client.get("/api/mouse-programs")
+
+    assert response.status_code == 200
+    filenames = {program["filename"] for program in response.json()}
+    assert "adaptive_spiral_human.py" in filenames
+    assert "human_random.py" in filenames
+    assert "teleport_grid.py" in filenames
+    assert "rapid_center.py" in filenames
+
+
+def test_run_mouse_program_rejects_path_traversal(client: TestClient) -> None:
+    response = client.post(
+        "/api/mouse-programs/run",
+        json={
+            "filename": "../app.py",
+            "region": "1,2,3,4",
+            "count": 1,
+            "focus_wait": 0,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["ok"] is False
+
+
+def test_run_mouse_program_executes_selected_file(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    program_dir = tmp_path / "mouse_programs"
+    program_dir.mkdir()
+    program = program_dir / "echo_program.py"
+    program.write_text(
+        "from __future__ import annotations\n"
+        "import argparse\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--base-url')\n"
+        "parser.add_argument('--region')\n"
+        "parser.add_argument('--count')\n"
+        "parser.add_argument('--focus-wait')\n"
+        "args = parser.parse_args()\n"
+        "print(f'echo region={args.region} count={args.count}')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(app_module, "MOUSE_PROGRAM_DIR", program_dir)
+
+    response = client.post(
+        "/api/mouse-programs/run",
+        json={
+            "filename": "echo_program.py",
+            "region": "1,2,3,4",
+            "count": 7,
+            "focus_wait": 0,
+            "timeout": 10,
+            "base_url": "http://testserver",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert body["returncode"] == 0
+    assert "echo region=1,2,3,4 count=7" in body["stdout"]
