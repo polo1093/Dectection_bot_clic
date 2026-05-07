@@ -20,6 +20,8 @@ from detectors.heuristic_mouse_v1 import HeuristicMouseV1
 
 APP_DIR = Path(__file__).resolve().parent
 MOUSE_PROGRAM_DIR = APP_DIR / "mouse_programs"
+MAX_MOUSE_PROGRAM_SECONDS = 15.0
+DEFAULT_MOUSE_CLICK_RATE_HZ = 0.7
 app = FastAPI(title="Bot risk (browser game) — heuristic scoring")
 
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -56,10 +58,10 @@ class FeaturePayload(BaseModel):
 
 class MouseProgramRunPayload(BaseModel):
     filename: str = Field(..., min_length=1, max_length=120)
-    region: str = Field(..., pattern=r"^\d+,\d+,\d+,\d+$")
+    region: str = Field(..., pattern=r"^-?\d+,-?\d+,-?\d+,-?\d+$")
     count: int = Field(20, ge=1, le=100)
     focus_wait: float = Field(3.0, ge=0.0, le=30.0)
-    timeout: float = Field(90.0, ge=5.0, le=600.0)
+    timeout: float = Field(MAX_MOUSE_PROGRAM_SECONDS, ge=1.0, le=MAX_MOUSE_PROGRAM_SECONDS)
     base_url: str = Field("http://127.0.0.1:8000", min_length=1, max_length=200)
 
 
@@ -77,6 +79,12 @@ def resolve_mouse_program(filename: str) -> Path:
     if root not in path.parents or not path.is_file():
         raise FileNotFoundError(filename)
     return path
+
+
+def fit_click_count(count: int, focus_wait: float) -> int:
+    runnable_seconds = max(1.0, MAX_MOUSE_PROGRAM_SECONDS - focus_wait - 0.5)
+    max_count = max(1, int(runnable_seconds * DEFAULT_MOUSE_CLICK_RATE_HZ))
+    return min(count, max_count)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -122,6 +130,8 @@ def run_mouse_program(payload: MouseProgramRunPayload) -> Dict[str, Any]:
         return {"ok": False, "error": "program_already_running"}
 
     started_at = time.time()
+    timeout_seconds = min(payload.timeout, MAX_MOUSE_PROGRAM_SECONDS)
+    click_count = fit_click_count(payload.count, payload.focus_wait)
     try:
         completed = subprocess.run(
             [
@@ -132,14 +142,14 @@ def run_mouse_program(payload: MouseProgramRunPayload) -> Dict[str, Any]:
                 "--region",
                 payload.region,
                 "--count",
-                str(payload.count),
+                str(click_count),
                 "--focus-wait",
                 str(payload.focus_wait),
             ],
             cwd=str(APP_DIR),
             capture_output=True,
             text=True,
-            timeout=payload.timeout,
+            timeout=timeout_seconds,
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
@@ -147,7 +157,7 @@ def run_mouse_program(payload: MouseProgramRunPayload) -> Dict[str, Any]:
             "ok": False,
             "error": "timeout",
             "stdout": exc.stdout or "",
-            "stderr": exc.stderr or "",
+            "stderr": (exc.stderr or "") + f"\nStopped after {timeout_seconds:.0f}s max runtime.",
             "duration": time.time() - started_at,
         }
     finally:
@@ -156,6 +166,8 @@ def run_mouse_program(payload: MouseProgramRunPayload) -> Dict[str, Any]:
     return {
         "ok": completed.returncode == 0,
         "filename": payload.filename,
+        "requested_count": payload.count,
+        "run_count": click_count,
         "returncode": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
@@ -171,6 +183,7 @@ def score(payload: FeaturePayload) -> Dict[str, Any]:
         "ts": time.time(),
         "session_id": session_id,
         "reason": payload.reason,
+        "n": payload.n,
         "bot_probability": result["bot_probability"],
         "model": result["model"],
         "raw_score": result["raw_score"],

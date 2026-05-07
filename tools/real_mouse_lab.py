@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import math
 import random
 import time
@@ -14,12 +15,42 @@ from pyclick import HumanClicker
 
 Point = Tuple[int, int]
 Region = Tuple[int, int, int, int]
+_VK_F12 = 0x7B
+DEFAULT_CLICK_RATE_HZ = 0.7
 
 
 @dataclass(frozen=True)
 class RunResult:
     count: int
     scores: list[float]
+
+
+def emergency_stop_requested() -> bool:
+    try:
+        return bool(ctypes.windll.user32.GetAsyncKeyState(_VK_F12) & 0x8000)
+    except AttributeError:
+        return False
+
+
+def check_emergency_stop() -> None:
+    if emergency_stop_requested():
+        raise SystemExit("Emergency stop requested with F12")
+
+
+def interruptible_sleep(seconds: float, step: float = 0.05) -> None:
+    deadline = time.monotonic() + max(0.0, seconds)
+    while True:
+        check_emergency_stop()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return
+        time.sleep(min(step, remaining))
+
+
+def pace_click(started_at: float, rate_hz: float = DEFAULT_CLICK_RATE_HZ) -> None:
+    interval = 1.0 / max(0.1, rate_hz)
+    elapsed = time.monotonic() - started_at
+    interruptible_sleep(max(0.0, interval - elapsed))
 
 
 def parse_region(value: str) -> Region:
@@ -80,7 +111,7 @@ def fetch_latest_event(base_url: str, session_id: Optional[str]) -> Optional[dic
 
 
 def sleep_between(min_delay: float, max_delay: float) -> None:
-    time.sleep(random.uniform(min_delay, max_delay))
+    interruptible_sleep(random.uniform(min_delay, max_delay))
 
 
 class RealMouseActor:
@@ -88,22 +119,31 @@ class RealMouseActor:
         self.clicker = HumanClicker()
 
     def human_move_click(self, point: Point, min_duration: float, max_duration: float) -> None:
+        check_emergency_stop()
         self.clicker.move(point, random.uniform(min_duration, max_duration))
-        time.sleep(random.uniform(0.04, 0.18))
+        interruptible_sleep(random.uniform(0.04, 0.18))
+        check_emergency_stop()
         self.clicker.click()
 
     def linear_move_click(self, point: Point, duration: float) -> None:
+        check_emergency_stop()
         self.clicker.move(point, duration)
+        check_emergency_stop()
         self.clicker.click()
 
     def teleport_click(self, point: Point) -> None:
+        check_emergency_stop()
         self.clicker.move(point, 0.01)
+        check_emergency_stop()
         self.clicker.click()
 
     def double_click(self, point: Point, duration: float) -> None:
+        check_emergency_stop()
         self.clicker.move(point, duration)
+        check_emergency_stop()
         self.clicker.click()
-        time.sleep(random.uniform(0.03, 0.08))
+        interruptible_sleep(random.uniform(0.03, 0.08))
+        check_emergency_stop()
         self.clicker.click()
 
 
@@ -152,24 +192,27 @@ def run_profile(
     points = list(iter_points(mode, region, count))
 
     for index, point in enumerate(points, start=1):
+        click_started_at = time.monotonic()
+        check_emergency_stop()
         if mode == "human":
-            actor.human_move_click(point, min_duration=0.45, max_duration=1.25)
+            actor.human_move_click(point, min_duration=0.35, max_duration=0.9)
         elif mode == "linear":
-            actor.linear_move_click(point, duration=0.18)
+            actor.linear_move_click(point, duration=0.35)
         elif mode == "teleport":
             actor.teleport_click(point)
         elif mode == "double":
-            actor.double_click(point, duration=0.18)
+            actor.double_click(point, duration=0.25)
         elif mode in {"grid", "center"}:
-            actor.linear_move_click(point, duration=0.22)
+            actor.linear_move_click(point, duration=0.35)
         else:
             raise ValueError(f"unsupported mode: {mode}")
 
-        time.sleep(0.25)
+        interruptible_sleep(0.25)
         score = print_event(index, fetch_latest_event(base_url, session_id))
         if score is not None:
             scores.append(score)
-        sleep_between(min_delay, max_delay)
+        if index < len(points):
+            pace_click(click_started_at)
 
     return RunResult(count=len(points), scores=scores)
 
@@ -205,7 +248,7 @@ def main() -> None:
     print(f"Mode: {args.mode}")
     print(f"Region: {args.region}")
     print(f"Focus the browser window. Starting in {args.focus_wait:.1f}s...")
-    time.sleep(args.focus_wait)
+    interruptible_sleep(args.focus_wait)
 
     result = run_profile(
         mode=args.mode,

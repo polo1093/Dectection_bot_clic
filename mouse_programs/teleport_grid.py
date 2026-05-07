@@ -7,7 +7,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.real_mouse_lab import RealMouseActor, grid_points, health_check, parse_region
+from tools.real_mouse_lab import (
+    RealMouseActor,
+    check_emergency_stop,
+    grid_points,
+    health_check,
+    interruptible_sleep,
+    pace_click,
+    parse_region,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,12 +34,16 @@ def main() -> None:
     print(f"Program: teleport_grid | clicks={args.count} | region={args.region}")
     if args.focus_wait:
         print(f"Starting in {args.focus_wait:.1f}s...")
-        time.sleep(args.focus_wait)
+        interruptible_sleep(args.focus_wait)
 
-    for index, point in enumerate(grid_points(args.region, args.count), start=1):
+    points = grid_points(args.region, args.count)
+    for index, point in enumerate(points, start=1):
+        click_started_at = time.monotonic()
+        check_emergency_stop()
         actor.teleport_click(point)
         print(f"{index:02d} clicked {point}")
-        time.sleep(0.12)
+        if index < len(points):
+            pace_click(click_started_at)
 
 
 if __name__ == "__main__":

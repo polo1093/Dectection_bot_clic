@@ -132,28 +132,35 @@ const BotRisk = (() => {
   function start(opts) {
     const {
       scoreEndpoint,
+      telemetryEndpoint = null,
       overlayProbEl,
       overlayMetaEl,
       overlaySignalsEl,
       overlayStatusEl,
       overlayEl,
       riskBarEl = null,
+      windowSelectEl = null,
+      windowBadgeEl = null,
 
       // NEW behavior knobs
       target = window,
-      horizonMs = 10_000,        // fenêtre glissante (mouvements sur 10s)
-      minPoints = 25,            // nb min d'events pour scorer
+      horizonMs: initialHorizonMs = 10_000,        // fenetre glissante
+      minPoints: initialMinPoints = 25,            // nb min d'events pour scorer
       idleUpdateMs = 10_000,     // si aucun clic depuis last update => auto-update après 10s
       housekeepingEveryMs = 500, // purge buffer
       historyEl = null,          // <ul> ou <div> qui reçoit l'historique
-      historyMax = 55,           // nb max de lignes
+      historyMax = 6,            // nb max de lignes visibles
 
     } = opts;
 
     let points = [];
+    let horizonMs = initialHorizonMs;
+    let minPoints = initialMinPoints;
     let lastScoreAt = 0;
     let lastClickAt = 0;
     let scoring = false;
+    let lastTelemetryTs = 0;
+    let lastRenderedKey = "";
     const sessionId = createSessionId();
 
     function prune() {
@@ -165,6 +172,28 @@ const BotRisk = (() => {
         while (k < points.length && points[k].t < cutoff) k++;
         if (k > 0) points.splice(0, k);
       }
+    }
+
+    function minPointsForWindow(windowMs) {
+      if (windowMs <= 1000) return 5;
+      if (windowMs <= 2000) return 8;
+      if (windowMs <= 5000) return 12;
+      return initialMinPoints;
+    }
+
+    function renderWindowLabel() {
+      const seconds = Math.round(horizonMs / 1000);
+      if (windowBadgeEl) windowBadgeEl.textContent = `Fenetre ${seconds}s`;
+      if (overlayMetaEl && lastScoreAt === 0) {
+        overlayMetaEl.textContent = `waiting for activity... window=${seconds}s`;
+      }
+    }
+
+    function setDetectionWindow(windowMs) {
+      horizonMs = Number(windowMs) || 10_000;
+      minPoints = minPointsForWindow(horizonMs);
+      prune();
+      renderWindowLabel();
     }
 
     function pushPoint(e, type) {
@@ -196,7 +225,13 @@ const BotRisk = (() => {
 
       const line = document.createElement("div");
       line.className = "botrisk-history-line";
-      line.textContent = `${fmtTime()} | ${pct}% | ${reason} | ${model} | raw=${raw.toFixed(3)}`;
+      const compactReason = reason
+        .replace("BotD: ", "B:")
+        .replace("Mouse: ", "M:")
+        .replace("mouse_heuristic_v1", "mouse")
+        .replace("combo_v1", "combo");
+      line.textContent = `${fmtTime()}  ${pct}%  ${compactReason}`;
+      line.title = `${fmtTime()} | ${pct}% | ${reason} | ${model} | raw=${raw.toFixed(3)}`;
 
       historyEl.prepend(line);
 
@@ -205,7 +240,7 @@ const BotRisk = (() => {
         historyEl.removeChild(historyEl.lastChild);
       }
 
-      historyEl.scrollTop = historyEl.scrollHeight;
+      historyEl.scrollTop = 0;
     }
 
     function updateRiskClass(prob) {
@@ -269,6 +304,28 @@ const BotRisk = (() => {
       return message;
     }
 
+    function renderScoreEvent(event) {
+      const prob = Number(event.bot_probability || 0);
+      const pct = Math.round(prob * 100);
+      const raw = Number(event.raw_score || prob);
+      const model = event.model || "unknown";
+      const signals = event.signals || {};
+      const renderKey = `${event.reason || ""}|${model}|${raw.toFixed(3)}|${pct}`;
+      if (renderKey === lastRenderedKey) return;
+      lastRenderedKey = renderKey;
+
+      if (overlayProbEl) overlayProbEl.textContent = `${pct}%`;
+      if (overlayMetaEl) overlayMetaEl.textContent = `${model} | raw=${raw.toFixed(3)} | w=${event.n || "external"}`;
+
+      const signalSummary = renderSignals(signals);
+      updateRiskClass(prob);
+      updateStatus(prob, signals);
+
+      const reason = event.reason || "external";
+      const historyReason = signalSummary ? `${reason} | ${signalSummary}` : reason;
+      pushHistory(pct, model, raw, historyReason);
+    }
+
     function ensureBotdResult() {
       if (!botdResultPromise) {
         botdResultPromise = botdAgentPromise
@@ -305,21 +362,26 @@ const BotRisk = (() => {
         };
 
         const out = await postJSON(scoreEndpoint, payload);
-        const pct = Math.round(out.bot_probability * 100);
-
-        if (overlayProbEl) overlayProbEl.textContent = `${pct}%`;
-        if (overlayMetaEl) overlayMetaEl.textContent = `${out.model} | raw=${out.raw_score.toFixed(3)} | w=${w.length}`;
-
-        const signalSummary = renderSignals(out.signals || {});
-        updateRiskClass(out.bot_probability);
-        updateStatus(out.bot_probability, out.signals || {});
-
-        const historyReason = signalSummary ? `${reason} | ${signalSummary}` : reason;
-        pushHistory(pct, out.model, out.raw_score, historyReason);
+        renderScoreEvent({ ...out, reason, n: w.length, ts: Date.now() / 1000 });
 
         lastScoreAt = nowMs();
       } finally {
         scoring = false;
+      }
+    }
+
+    async function pullLatestTelemetry() {
+      if (!telemetryEndpoint) return;
+      try {
+        const response = await fetch(`${telemetryEndpoint}?limit=1`);
+        if (!response.ok) return;
+        const events = await response.json();
+        const event = events[events.length - 1];
+        if (!event || !event.ts || event.ts <= lastTelemetryTs) return;
+        lastTelemetryTs = event.ts;
+        renderScoreEvent(event);
+      } catch (err) {
+        console.warn("telemetry poll failed", err);
       }
     }
 
@@ -356,8 +418,18 @@ const BotRisk = (() => {
       }
     }, housekeepingEveryMs);
 
+    setInterval(pullLatestTelemetry, 1500);
+
+    if (windowSelectEl) {
+      windowSelectEl.value = String(horizonMs);
+      windowSelectEl.addEventListener("change", () => {
+        setDetectionWindow(windowSelectEl.value);
+        scoreNow("window");
+      });
+    }
+
     // First feedback: show waiting state.
-    if (overlayMetaEl) overlayMetaEl.textContent = `waiting for activity... window=${Math.round(horizonMs/1000)}s`;
+    setDetectionWindow(horizonMs);
     if (overlayStatusEl) overlayStatusEl.textContent = "Low risk";
     updateRiskClass(0);
   }
