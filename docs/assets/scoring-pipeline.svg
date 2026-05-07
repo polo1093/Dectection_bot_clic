@@ -1,0 +1,42 @@
+<svg width="1100" height="340" viewBox="0 0 1100 340" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Pipeline de scoring</title>
+  <desc id="desc">Pipeline from browser events to aggregated bot probability.</desc>
+  <rect width="1100" height="340" rx="24" fill="#F8FAFC"/>
+  <rect x="36" y="42" width="186" height="220" rx="18" fill="#E0F2FE" stroke="#0284C7" stroke-width="2"/>
+  <text x="66" y="94" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="800">Navigateur</text>
+  <text x="66" y="132" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">pointermove</text>
+  <text x="66" y="160" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">click</text>
+  <text x="66" y="188" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">BotD</text>
+  <text x="66" y="216" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">webdriver</text>
+
+  <path d="M242 152H314" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+  <path d="M302 138L318 152L302 166" stroke="#64748B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="338" y="42" width="186" height="220" rx="18" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+  <text x="368" y="94" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="800">Features</text>
+  <text x="368" y="132" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">vitesse</text>
+  <text x="368" y="160" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">variance</text>
+  <text x="368" y="188" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">angles</text>
+  <text x="368" y="216" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">straightness</text>
+
+  <path d="M544 152H616" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+  <path d="M604 138L620 152L604 166" stroke="#64748B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="640" y="42" width="186" height="220" rx="18" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="670" y="94" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="800">FastAPI</text>
+  <text x="670" y="132" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">/api/score</text>
+  <text x="670" y="160" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">detectors</text>
+  <text x="670" y="188" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">aggregator</text>
+  <text x="670" y="216" fill="#334155" font-family="Segoe UI, Arial, sans-serif" font-size="16">telemetry</text>
+
+  <path d="M846 152H918" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+  <path d="M906 138L922 152L906 166" stroke="#64748B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="942" y="42" width="122" height="220" rx="18" fill="#111827"/>
+  <text x="972" y="94" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="800">Score</text>
+  <text x="972" y="146" fill="#BAE6FD" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800">0-1</text>
+  <text x="972" y="188" fill="#CBD5E1" font-family="Segoe UI, Arial, sans-serif" font-size="16">overlay</text>
+  <text x="972" y="216" fill="#CBD5E1" font-family="Segoe UI, Arial, sans-serif" font-size="16">history</text>
+
+  <text x="45" y="310" fill="#475569" font-family="Segoe UI, Arial, sans-serif" font-size="15">Le front transmet uniquement des features agrégées, pas la trajectoire brute.</text>
+</svg>
