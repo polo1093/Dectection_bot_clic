@@ -137,6 +137,7 @@ const BotRisk = (() => {
       overlaySignalsEl,
       overlayStatusEl,
       overlayEl,
+      riskBarEl = null,
 
       // NEW behavior knobs
       target = window,
@@ -195,7 +196,7 @@ const BotRisk = (() => {
 
       const line = document.createElement("div");
       line.className = "botrisk-history-line";
-      line.textContent = `[${fmtTime()}] ${pct}% — ${reason} — ${model} (raw=${raw.toFixed(3)})`;
+      line.textContent = `${fmtTime()} | ${pct}% | ${reason} | ${model} | raw=${raw.toFixed(3)}`;
 
       historyEl.prepend(line);
 
@@ -216,6 +217,10 @@ const BotRisk = (() => {
         overlayEl.classList.add("risk-mid");
       } else {
         overlayEl.classList.add("risk-low");
+      }
+
+      if (riskBarEl) {
+        riskBarEl.style.width = `${Math.round(prob * 100)}%`;
       }
     }
 
@@ -246,18 +251,18 @@ const BotRisk = (() => {
 
     function updateStatus(prob, signals) {
       if (!overlayStatusEl) return "";
-      let message = "Low bot risk";
+      let message = "Low risk";
 
       if (prob >= 0.7) {
-        message = "High bot risk";
+        message = "High risk";
       } else if (prob >= 0.5) {
-        message = "Elevated bot risk";
+        message = "Elevated";
       }
 
       const botdBot = signals.botd_v2?.raw?.bot === true;
       if (botdBot) {
         const kind = signals.botd_v2.raw?.kind || "unknown";
-        message = `${message} — Automation detected: ${kind}`;
+        message = `${message}: ${kind}`;
       }
 
       overlayStatusEl.textContent = message;
@@ -351,9 +356,9 @@ const BotRisk = (() => {
       }
     }, housekeepingEveryMs);
 
-    // First feedback: show “waiting”
-    if (overlayMetaEl) overlayMetaEl.textContent = `waiting for activity… (window=${Math.round(horizonMs/1000)}s)`;
-    if (overlayStatusEl) overlayStatusEl.textContent = "Low bot risk";
+    // First feedback: show waiting state.
+    if (overlayMetaEl) overlayMetaEl.textContent = `waiting for activity... window=${Math.round(horizonMs/1000)}s`;
+    if (overlayStatusEl) overlayStatusEl.textContent = "Low risk";
     updateRiskClass(0);
   }
 
