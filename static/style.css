@@ -1,56 +1,420 @@
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
-#game { padding: 16px; }
-.playground {
-  margin-top: 12px;
-  height: 360px;
-  border: 2px dashed #999;
+:root {
+  color-scheme: light;
+  --bg: #eef2f7;
+  --panel: #ffffff;
+  --ink: #111827;
+  --muted: #64748b;
+  --line: #dbe3ef;
+  --blue: #2563eb;
+  --cyan: #0891b2;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(8, 145, 178, 0.12), transparent 28%),
+    linear-gradient(135deg, #f8fafc 0%, var(--bg) 100%);
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(1440px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 30px 0;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  margin-top: 6px;
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 0.95;
+}
+
+.hero p {
+  max-width: 720px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 280px;
+}
+
+.badge {
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: #1e3a8a;
+  background: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 22px;
+  align-items: start;
+}
+
+.game-card,
+.risk-panel {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.game-card {
+  overflow: hidden;
+}
+
+.card-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 26px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-header h2 {
+  font-size: 24px;
+}
+
+.card-header p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: #166534;
+  background: #dcfce7;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.live-dot span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.16);
+}
+
+.playground {
+  position: relative;
+  min-height: min(62vh, 620px);
+  margin: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(37, 99, 235, 0.26);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(145deg, #f8fbff 0%, #e0f2fe 48%, #f7fee7 100%);
+  background-size: 36px 36px, 36px 36px, auto;
+  cursor: crosshair;
   user-select: none;
 }
-#botRiskOverlay {
-  position: fixed;
-  right: 14px;
-  top: 14px;
-  background: rgba(20,20,20,0.86);
-  color: #fff;
-  padding: 10px 12px;
-  border-radius: 10px;
-  min-width: 160px;
-  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+
+.grid-glow {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 62%);
+  filter: blur(8px);
+}
+
+.playground-copy {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  display: grid;
+  gap: 6px;
+  max-width: 420px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(14px);
+}
+
+.playground-copy strong {
+  font-size: 20px;
+}
+
+.playground-copy span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.target {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at center, #ffffff 0 16%, transparent 17%),
+    radial-gradient(circle at center, #ef4444 0 35%, transparent 36%),
+    radial-gradient(circle at center, #ffffff 0 52%, transparent 53%),
+    #2563eb;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.26);
+  cursor: pointer;
+}
+
+.target:hover {
+  transform: scale(1.08);
+}
+
+.target-a {
+  top: 18%;
+  left: 20%;
+}
+
+.target-b {
+  top: 34%;
+  right: 21%;
+}
+
+.target-c {
+  right: 36%;
+  bottom: 24%;
+}
+
+.risk-panel {
+  position: sticky;
+  top: 20px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 28px);
+  min-height: 560px;
+  max-height: calc(100vh - 40px);
+  padding: 22px;
+  color: #f8fafc;
+  background: #111827;
 }
-#botRiskOverlay.risk-low { background: rgba(20,20,20,0.86); }
-#botRiskOverlay.risk-mid { background: rgba(196, 108, 0, 0.92); }
-#botRiskOverlay.risk-high { background: rgba(160, 15, 15, 0.92); }
-#botRiskOverlay .label { font-size: 12px; opacity: 0.8; }
-#botRiskOverlay .value { font-size: 28px; font-weight: 700; margin-top: 2px; }
-#botRiskOverlay .status { font-size: 12px; margin-top: 4px; }
-#botRiskOverlay .meta { font-size: 11px; opacity: 0.75; margin-top: 6px; }
-#botRiskOverlay .signals { font-size: 11px; opacity: 0.85; margin-top: 6px; }
 
+.panel-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
 
-#botRiskOverlay .hist-title {
-  margin-top: 10px;
+.label {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.value {
+  margin-top: 4px;
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.status {
+  max-width: 130px;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.16);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.risk-meter {
+  height: 12px;
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.24);
+}
+
+.risk-meter-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green);
+  transition: width 180ms ease, background-color 180ms ease;
+}
+
+.meta {
+  margin-top: 14px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.signals div {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #dbeafe;
+  background: rgba(30, 41, 59, 0.9);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.history-head span:last-child {
+  color: #94a3b8;
   font-size: 11px;
-  opacity: 0.8;
+  font-weight: 700;
 }
 
 #botRiskHistory {
-  margin-top: 6px;
-  flex: 1;
-  max-height: none;
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
   overflow: auto;
-  font-size: 11px;
-  line-height: 1.25;
-  opacity: 0.9;
+  padding-right: 4px;
 }
 
 .botrisk-history-line {
-  padding: 2px 0;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  padding: 9px 10px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.72);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+#botRiskOverlay.risk-mid .status {
+  color: #fef3c7;
+  background: rgba(217, 119, 6, 0.18);
+}
+
+#botRiskOverlay.risk-high .status {
+  color: #fee2e2;
+  background: rgba(220, 38, 38, 0.2);
+}
+
+#botRiskOverlay.risk-mid .risk-meter-fill {
+  background: var(--amber);
+}
+
+#botRiskOverlay.risk-high .risk-meter-fill {
+  background: var(--red);
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    width: min(100% - 28px, 760px);
+  }
+
+  .hero,
+  .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-actions {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-panel {
+    position: static;
+    min-height: 0;
+    max-height: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell {
+    width: calc(100% - 20px);
+    padding-top: 18px;
+  }
+
+  .playground {
+    min-height: 460px;
+    margin: 10px;
+  }
+
+  .playground-copy {
+    right: 16px;
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .value {
+    font-size: 48px;
+  }
 }

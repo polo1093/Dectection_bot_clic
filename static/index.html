@@ -3,27 +3,70 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bot risk game POC</title>
+  <title>Bot Risk Game</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div id="game">
-    <h1>Demo "jeu navigateur"</h1>
-    <p>Déplace la souris, clique, joue quelques secondes. L’overlay affiche un risk score.</p>
-    <div class="playground" id="playground">
-      Zone de jeu (bouge/clic ici)
-    </div>
-  </div>
+  <main class="app-shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">POC FastAPI + navigateur</div>
+        <h1>Bot Risk Game</h1>
+        <p>Interagissez avec la zone de jeu pour estimer un score de risque bot à partir des mouvements, clics et signaux navigateur.</p>
+      </div>
+      <div class="hero-actions" aria-label="Indicateurs du projet">
+        <span class="badge">Fenêtre 10s</span>
+        <span class="badge">BotD</span>
+        <span class="badge">Mouse dynamics</span>
+      </div>
+    </section>
 
-  <div id="botRiskOverlay">
-    <div class="label">Bot probability</div>
-    <div class="value" id="botProb">--%</div>
-    <div class="status" id="botStatus">Low bot risk</div>
-    <div class="meta" id="botMeta"></div>
-    <div class="signals" id="botSignals"></div>
-    <div class="hist-title">History</div>
-    <div id="botRiskHistory"></div>
-  </div>
+    <section class="content-grid">
+      <div class="game-card">
+        <div class="card-header">
+          <div>
+            <h2>Zone de jeu</h2>
+            <p>Bougez la souris, cliquez sur les cibles et observez le score.</p>
+          </div>
+          <div class="live-dot"><span></span> actif</div>
+        </div>
+
+        <div class="playground" id="playground" aria-label="Zone de jeu interactive">
+          <div class="grid-glow"></div>
+          <button class="target target-a" type="button" aria-label="Cible 1"></button>
+          <button class="target target-b" type="button" aria-label="Cible 2"></button>
+          <button class="target target-c" type="button" aria-label="Cible 3"></button>
+          <div class="playground-copy">
+            <strong>Cliquez dans la zone</strong>
+            <span>Les mouvements restent locaux, seules des features agrégées sont envoyées.</span>
+          </div>
+        </div>
+      </div>
+
+      <aside id="botRiskOverlay" class="risk-panel">
+        <div class="panel-topline">
+          <div>
+            <div class="label">Bot probability</div>
+            <div class="value" id="botProb">--%</div>
+          </div>
+          <div class="status" id="botStatus">Low bot risk</div>
+        </div>
+
+        <div class="risk-meter" aria-hidden="true">
+          <div class="risk-meter-fill" id="riskBar"></div>
+        </div>
+
+        <div class="meta" id="botMeta"></div>
+        <div class="signals" id="botSignals"></div>
+
+        <div class="history-head">
+          <span>Historique</span>
+          <span>dernieres mesures</span>
+        </div>
+        <div id="botRiskHistory"></div>
+      </aside>
+    </section>
+  </main>
 
   <script src="/static/bot_risk.js"></script>
   <script>
@@ -34,14 +77,14 @@
       overlaySignalsEl: document.getElementById("botSignals"),
       overlayStatusEl: document.getElementById("botStatus"),
       overlayEl: document.getElementById("botRiskOverlay"),
+      riskBarEl: document.getElementById("riskBar"),
       historyEl: document.getElementById("botRiskHistory"),
       target: document.getElementById("playground"),
       horizonMs: 10000,
       idleUpdateMs: 10000,
-      minPoints: 15
+      minPoints: 15,
+      historyMax: 18
     });
   </script>
-
-
 </body>
 </html>
