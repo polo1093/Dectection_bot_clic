@@ -66,9 +66,49 @@
         <div id="botRiskHistory"></div>
       </aside>
     </section>
+
+    <section class="runner-card" aria-label="Lanceur de programmes souris">
+      <div class="runner-header">
+        <div>
+          <h2>Programmes de test</h2>
+          <p>Placez vos fichiers Python dans <code>mouse_programs/</code>, choisissez un programme, puis lancez une séquence de clics réelle.</p>
+        </div>
+        <button class="secondary-button" id="refreshPrograms" type="button">Rafraîchir</button>
+      </div>
+
+      <div class="runner-grid">
+        <label>
+          Programme
+          <select id="programSelect"></select>
+        </label>
+        <label>
+          Région écran
+          <input id="programRegion" type="text" value="100,390,1100,760" inputmode="numeric" />
+        </label>
+        <label>
+          Clics
+          <input id="programCount" type="number" min="1" max="100" value="20" />
+        </label>
+        <label>
+          Attente focus
+          <input id="programFocusWait" type="number" min="0" max="30" step="0.5" value="3" />
+        </label>
+      </div>
+
+      <div class="runner-actions">
+        <button class="secondary-button" id="estimateRegion" type="button">Utiliser la zone visible</button>
+        <button class="primary-button" id="runProgram" type="button">Lancer le programme</button>
+      </div>
+
+      <div class="runner-note">
+        Le script contrôle vraiment la souris. Gardez la page au premier plan et vérifiez que la région ne couvre que la zone de jeu.
+      </div>
+      <pre id="programOutput">Aucun programme lancé.</pre>
+    </section>
   </main>
 
   <script src="/static/bot_risk.js"></script>
+  <script src="/static/program_runner.js"></script>
   <script>
     BotRisk.start({
       scoreEndpoint: "/api/score",
@@ -84,6 +124,20 @@
       idleUpdateMs: 10000,
       minPoints: 15,
       historyMax: 18
+    });
+
+    ProgramRunner.start({
+      programsEndpoint: "/api/mouse-programs",
+      runEndpoint: "/api/mouse-programs/run",
+      selectEl: document.getElementById("programSelect"),
+      regionEl: document.getElementById("programRegion"),
+      countEl: document.getElementById("programCount"),
+      focusWaitEl: document.getElementById("programFocusWait"),
+      outputEl: document.getElementById("programOutput"),
+      refreshButton: document.getElementById("refreshPrograms"),
+      runButton: document.getElementById("runProgram"),
+      estimateRegionButton: document.getElementById("estimateRegion"),
+      target: document.getElementById("playground")
     });
   </script>
 </body>
