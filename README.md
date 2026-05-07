@@ -193,6 +193,3 @@ Voir [docs/real-test-environment.md](docs/real-test-environment.md) pour la cali
 - Afficher un mini graphique d'évolution du score dans l'overlay.
 - Ajouter des tests unitaires sur les détecteurs.
 
-## Licence
-
-À définir.
