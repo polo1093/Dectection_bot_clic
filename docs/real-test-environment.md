@@ -68,6 +68,32 @@ Profil double-clics rapides :
 python tools/real_mouse_lab.py --region 100,390,1100,760 --mode double --count 12
 ```
 
+## Lancer depuis le site
+
+Vous pouvez aussi lancer un programme directement depuis l'interface web.
+
+1. Placez un fichier Python dans `mouse_programs/`.
+2. Rechargez la page `http://127.0.0.1:8000`.
+3. Dans la section `Programmes de test`, choisissez le fichier.
+4. Cliquez sur `Utiliser la zone visible` ou saisissez une région écran manuelle.
+5. Cliquez sur `Lancer le programme`.
+
+Les programmes fournis acceptent tous les arguments suivants :
+
+```bash
+--base-url http://127.0.0.1:8000 --region 100,390,1100,760 --count 20 --focus-wait 3
+```
+
+Le serveur exécute uniquement les fichiers `.py` présents dans `mouse_programs/`.
+
+Programme adversarial plus réaliste :
+
+```bash
+python mouse_programs/adaptive_spiral_human.py --region 100,390,1100,760 --count 20 --focus-wait 3
+```
+
+Ce profil utilise des courbes de Bézier, une petite spirale de stabilisation avant le clic, du jitter contrôlé et des pauses variables. Il sert à tester si l'heuristique souris résiste à un script plus soigné.
+
 ## Profils disponibles
 
 | Mode | But |
