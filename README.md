@@ -150,6 +150,22 @@ Les modes disponibles sont `human`, `linear`, `teleport`, `grid`, `center` et `d
 
 Voir [docs/real-test-environment.md](docs/real-test-environment.md) pour la calibration de la zone et l'interprétation des scores.
 
+## Tests automatisés
+
+Installez les dépendances de test :
+
+```bash
+pip install -r requirements-test.txt
+```
+
+Lancez la suite `pytest` :
+
+```bash
+python -m pytest -q
+```
+
+Les tests couvrent l'API FastAPI, l'agrégateur, BotD et l'heuristique souris.
+
 ## Structure
 
 ```text
