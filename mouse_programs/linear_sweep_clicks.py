@@ -9,8 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.real_mouse_lab import (
     RealMouseActor,
-    center,
-    check_emergency_stop,
+    grid_points,
     health_check,
     interruptible_sleep,
     pace_click,
@@ -19,10 +18,10 @@ from tools.real_mouse_lab import (
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Repeated rapid center clicks")
+    parser = argparse.ArgumentParser(description="Linear mouse moves with regular clicks")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--region", required=True, type=parse_region)
-    parser.add_argument("--count", type=int, default=20)
+    parser.add_argument("--count", type=int, default=8)
     parser.add_argument("--focus-wait", type=float, default=3.0)
     return parser.parse_args()
 
@@ -31,18 +30,17 @@ def main() -> None:
     args = parse_args()
     health_check(args.base_url)
     actor = RealMouseActor()
-    point = center(args.region)
-    print(f"Program: rapid_center | clicks={args.count} | point={point}")
+    points = grid_points(args.region, args.count)
+    print(f"Program: linear_sweep_clicks | clicks={len(points)} | rate=0.7/s | region={args.region}")
     if args.focus_wait:
         print(f"Starting in {args.focus_wait:.1f}s...")
         interruptible_sleep(args.focus_wait)
 
-    for index in range(1, args.count + 1):
+    for index, point in enumerate(points, start=1):
         click_started_at = time.monotonic()
-        check_emergency_stop()
-        actor.double_click(point, duration=0.08)
-        print(f"{index:02d} double-clicked {point}")
-        if index < args.count:
+        actor.linear_move_click(point, duration=0.35)
+        print(f"{index:02d} linear-clicked {point}")
+        if index < len(points):
             pace_click(click_started_at)
 
 

@@ -15,13 +15,52 @@
         <p>Interagissez avec la zone de jeu pour estimer un score de risque bot à partir des mouvements, clics et signaux navigateur.</p>
       </div>
       <div class="hero-actions" aria-label="Indicateurs du projet">
-        <span class="badge">Fenêtre 10s</span>
+        <span class="badge" id="windowBadge">Fenetre 10s</span>
         <span class="badge">BotD</span>
         <span class="badge">Mouse dynamics</span>
       </div>
     </section>
 
     <section class="content-grid">
+      <aside class="runner-card" aria-label="Lanceur de programmes souris">
+        <div class="runner-header">
+          <div>
+            <h2>Programmes de test</h2>
+            <p>Placez vos fichiers Python dans <code>mouse_programs/</code>, choisissez un programme, puis lancez une sequence de clics reelle.</p>
+          </div>
+          <button class="secondary-button icon-button" id="refreshPrograms" type="button" aria-label="Rafraichir les programmes" title="Rafraichir">R</button>
+        </div>
+
+        <div class="runner-grid">
+          <label>
+            Programme
+            <select id="programSelect"></select>
+          </label>
+          <label>
+            Region ecran
+            <input id="programRegion" type="text" value="100,390,1100,760" inputmode="numeric" />
+          </label>
+          <label>
+            Clics
+            <input id="programCount" type="number" min="1" max="10" value="8" />
+          </label>
+          <label>
+            Attente focus
+            <input id="programFocusWait" type="number" min="0" max="30" step="0.5" value="3" />
+          </label>
+        </div>
+
+        <div class="runner-actions">
+          <button class="secondary-button" id="estimateRegion" type="button">Zone visible</button>
+          <button class="primary-button" id="runProgram" type="button">Lancer</button>
+        </div>
+
+        <div class="runner-note">
+          F12 arrete le script. Duree limitee a 15 secondes.
+        </div>
+        <pre id="programOutput">Aucun programme lance.</pre>
+      </aside>
+
       <div class="game-card">
         <div class="card-header">
           <div>
@@ -56,6 +95,16 @@
           <div class="risk-meter-fill" id="riskBar"></div>
         </div>
 
+        <label class="window-control">
+          <span>Fenetre detection</span>
+          <select id="detectionWindow">
+            <option value="1000">1s</option>
+            <option value="2000">2s</option>
+            <option value="5000">5s</option>
+            <option value="10000" selected>10s</option>
+          </select>
+        </label>
+
         <div class="meta" id="botMeta"></div>
         <div class="signals" id="botSignals"></div>
 
@@ -67,44 +116,6 @@
       </aside>
     </section>
 
-    <section class="runner-card" aria-label="Lanceur de programmes souris">
-      <div class="runner-header">
-        <div>
-          <h2>Programmes de test</h2>
-          <p>Placez vos fichiers Python dans <code>mouse_programs/</code>, choisissez un programme, puis lancez une séquence de clics réelle.</p>
-        </div>
-        <button class="secondary-button" id="refreshPrograms" type="button">Rafraîchir</button>
-      </div>
-
-      <div class="runner-grid">
-        <label>
-          Programme
-          <select id="programSelect"></select>
-        </label>
-        <label>
-          Région écran
-          <input id="programRegion" type="text" value="100,390,1100,760" inputmode="numeric" />
-        </label>
-        <label>
-          Clics
-          <input id="programCount" type="number" min="1" max="100" value="20" />
-        </label>
-        <label>
-          Attente focus
-          <input id="programFocusWait" type="number" min="0" max="30" step="0.5" value="3" />
-        </label>
-      </div>
-
-      <div class="runner-actions">
-        <button class="secondary-button" id="estimateRegion" type="button">Utiliser la zone visible</button>
-        <button class="primary-button" id="runProgram" type="button">Lancer le programme</button>
-      </div>
-
-      <div class="runner-note">
-        Le script contrôle vraiment la souris. Gardez la page au premier plan et vérifiez que la région ne couvre que la zone de jeu.
-      </div>
-      <pre id="programOutput">Aucun programme lancé.</pre>
-    </section>
   </main>
 
   <script src="/static/bot_risk.js"></script>
@@ -112,6 +123,7 @@
   <script>
     BotRisk.start({
       scoreEndpoint: "/api/score",
+      telemetryEndpoint: "/api/telemetry",
       overlayProbEl: document.getElementById("botProb"),
       overlayMetaEl: document.getElementById("botMeta"),
       overlaySignalsEl: document.getElementById("botSignals"),
@@ -119,11 +131,13 @@
       overlayEl: document.getElementById("botRiskOverlay"),
       riskBarEl: document.getElementById("riskBar"),
       historyEl: document.getElementById("botRiskHistory"),
+      windowSelectEl: document.getElementById("detectionWindow"),
+      windowBadgeEl: document.getElementById("windowBadge"),
       target: document.getElementById("playground"),
       horizonMs: 10000,
       idleUpdateMs: 10000,
       minPoints: 15,
-      historyMax: 18
+      historyMax: 6
     });
 
     ProgramRunner.start({

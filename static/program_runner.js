@@ -6,12 +6,25 @@ const ProgramRunner = (() => {
 
   function estimateScreenRegion(target) {
     const rect = target.getBoundingClientRect();
-    const chromeTop = Math.max(0, window.outerHeight - window.innerHeight);
-    const x1 = Math.round(window.screenX + rect.left);
-    const y1 = Math.round(window.screenY + chromeTop + rect.top);
-    const x2 = Math.round(window.screenX + rect.right);
-    const y2 = Math.round(window.screenY + chromeTop + rect.bottom);
+    const scale = window.devicePixelRatio || 1;
+    const viewport = window.visualViewport;
+    const viewportLeft = viewport ? viewport.offsetLeft : 0;
+    const viewportTop = viewport ? viewport.offsetTop : 0;
+    const chromeLeft = Math.max(0, Math.round((window.outerWidth - window.innerWidth) / 2));
+    const chromeTop = Math.max(0, window.outerHeight - window.innerHeight - chromeLeft);
+    const screenLeft = Number.isFinite(window.screenLeft) ? window.screenLeft : window.screenX;
+    const screenTop = Number.isFinite(window.screenTop) ? window.screenTop : window.screenY;
+    const x1 = Math.round((screenLeft + chromeLeft + viewportLeft + rect.left) * scale);
+    const y1 = Math.round((screenTop + chromeTop + viewportTop + rect.top) * scale);
+    const x2 = Math.round((screenLeft + chromeLeft + viewportLeft + rect.right) * scale);
+    const y2 = Math.round((screenTop + chromeTop + viewportTop + rect.bottom) * scale);
     return `${x1},${y1},${x2},${y2}`;
+  }
+
+  function describeWindow() {
+    const screenLeft = Number.isFinite(window.screenLeft) ? window.screenLeft : window.screenX;
+    const screenTop = Number.isFinite(window.screenTop) ? window.screenTop : window.screenY;
+    return `fenetre=(${Math.round(screenLeft)},${Math.round(screenTop)}) viewport=${window.innerWidth}x${window.innerHeight} scale=${window.devicePixelRatio || 1}`;
   }
 
   async function getJSON(url) {
@@ -81,8 +94,12 @@ const ProgramRunner = (() => {
         return;
       }
 
+      regionEl.value = estimateScreenRegion(target);
       runButton.disabled = true;
-      setOutput(outputEl, `Lancement de ${filename}...\nNe touchez pas la souris pendant l'execution.`);
+      setOutput(
+        outputEl,
+        `Lancement de ${filename}...\nRegion visible: ${regionEl.value}\n${describeWindow()}\nF12 pour arreter.`
+      );
 
       try {
         const result = await postJSON(runEndpoint, {
@@ -90,7 +107,7 @@ const ProgramRunner = (() => {
           region: regionEl.value.trim(),
           count: Number(countEl.value),
           focus_wait: Number(focusWaitEl.value),
-          timeout: 180,
+          timeout: 15,
           base_url: window.location.origin,
         });
 
@@ -98,6 +115,7 @@ const ProgramRunner = (() => {
           `ok=${result.ok}`,
           `returncode=${result.returncode ?? ""}`,
           `duration=${result.duration ? result.duration.toFixed(2) : "0.00"}s`,
+          result.run_count ? `clicks=${result.run_count}/${result.requested_count ?? result.run_count}` : "",
           "",
           "STDOUT",
           result.stdout || "(vide)",
@@ -118,7 +136,7 @@ const ProgramRunner = (() => {
     runButton.addEventListener("click", runProgram);
     estimateRegionButton.addEventListener("click", () => {
       regionEl.value = estimateScreenRegion(target);
-      setOutput(outputEl, `Region estimee: ${regionEl.value}`);
+      setOutput(outputEl, `Region estimee: ${regionEl.value}\n${describeWindow()}`);
     });
 
     refreshPrograms();

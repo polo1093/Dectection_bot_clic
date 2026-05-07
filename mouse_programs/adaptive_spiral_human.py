@@ -12,7 +12,15 @@ import pyautogui
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.real_mouse_lab import fetch_latest_event, health_check, parse_region, print_event
+from tools.real_mouse_lab import (
+    check_emergency_stop,
+    fetch_latest_event,
+    health_check,
+    interruptible_sleep,
+    pace_click,
+    parse_region,
+    print_event,
+)
 
 
 Point = Tuple[int, int]
@@ -29,8 +37,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--focus-wait", type=float, default=3.0)
     parser.add_argument("--session-id", default=None)
     parser.add_argument("--seed", type=int, default=None)
-    parser.add_argument("--min-duration", type=float, default=0.55)
-    parser.add_argument("--max-duration", type=float, default=1.65)
+    parser.add_argument("--min-duration", type=float, default=0.35)
+    parser.add_argument("--max-duration", type=float, default=0.85)
     parser.add_argument("--spiral-radius", type=float, default=28.0)
     parser.add_argument("--jitter", type=float, default=4.0)
     return parser.parse_args()
@@ -114,18 +122,21 @@ def move_path(points: Iterable[Point], duration: float) -> None:
         return
     base_sleep = duration / len(points)
     for point in points:
+        check_emergency_stop()
         pyautogui.moveTo(point[0], point[1], duration=0)
-        time.sleep(max(0.003, base_sleep * random.uniform(0.45, 1.75)))
+        interruptible_sleep(max(0.003, base_sleep * random.uniform(0.45, 1.75)), step=0.01)
 
 
 def settle_and_click(target: Point, region: Region, jitter: float) -> None:
     loops = random.randint(2, 5)
     for _ in range(loops):
+        check_emergency_stop()
         jx = random.uniform(-jitter, jitter)
         jy = random.uniform(-jitter, jitter)
         point = clamp_point((target[0] + jx, target[1] + jy), region)
         pyautogui.moveTo(point[0], point[1], duration=random.uniform(0.025, 0.075))
-        time.sleep(random.uniform(0.025, 0.11))
+        interruptible_sleep(random.uniform(0.025, 0.11), step=0.01)
+    check_emergency_stop()
     pyautogui.click()
 
 
@@ -142,9 +153,11 @@ def run(args: argparse.Namespace) -> None:
     )
     if args.focus_wait:
         print(f"Starting in {args.focus_wait:.1f}s...")
-        time.sleep(args.focus_wait)
+        interruptible_sleep(args.focus_wait)
 
     for index in range(1, args.count + 1):
+        click_started_at = time.monotonic()
+        check_emergency_stop()
         start = pyautogui.position()
         target = random_target(args.region)
         duration = random.uniform(args.min_duration, args.max_duration)
@@ -153,10 +166,11 @@ def run(args: argparse.Namespace) -> None:
             duration,
         )
         settle_and_click(target, args.region, args.jitter)
-        time.sleep(random.uniform(0.18, 0.62))
+        interruptible_sleep(0.18)
         event = fetch_latest_event(args.base_url, args.session_id)
         print_event(index, event)
-        time.sleep(random.uniform(0.22, 0.95))
+        if index < args.count:
+            pace_click(click_started_at)
 
 
 def main() -> None:
