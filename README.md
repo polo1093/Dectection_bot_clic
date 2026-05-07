@@ -124,7 +124,7 @@ Exemple de réponse :
 Installez les dépendances du script :
 
 ```bash
-pip install pyclick requests
+pip install -r requirements-test.txt
 ```
 
 Lancez le script après avoir ouvert la page dans le navigateur :
@@ -135,6 +135,20 @@ python tools/human_mouse_test.py --region 100,200,900,800 --n-clicks 5
 
 `REGION` correspond à la zone cliquable du jeu, au format écran `x1,y1,x2,y2`.  
 Pour calibrer proprement, utilisez un outil de coordonnées souris et ciblez uniquement la zone de jeu.
+
+## Environnement de test réel
+
+Un lab plus complet est disponible pour comparer plusieurs comportements de souris à l'écran :
+
+```bash
+python tools/real_mouse_lab.py --region 100,390,1100,760 --mode human --count 12
+python tools/real_mouse_lab.py --region 100,390,1100,760 --mode teleport --count 12
+python tools/real_mouse_lab.py --region 100,390,1100,760 --mode grid --count 12
+```
+
+Les modes disponibles sont `human`, `linear`, `teleport`, `grid`, `center` et `double`.
+
+Voir [docs/real-test-environment.md](docs/real-test-environment.md) pour la calibration de la zone et l'interprétation des scores.
 
 ## Structure
 
@@ -150,8 +164,11 @@ Pour calibrer proprement, utilisez un outil de coordonnées souris et ciblez uni
 │   ├── index.html             # Démo navigateur
 │   ├── style.css              # Présentation de la page
 │   └── bot_risk.js            # Collecte et scoring frontend
+├── docs/
+│   └── real-test-environment.md
 └── tools/
-    └── human_mouse_test.py    # Script de test avec pyclick
+    ├── human_mouse_test.py    # Script de test simple avec pyclick
+    └── real_mouse_lab.py      # Lab de mouvements souris réels
 ```
 
 ## Points forts
