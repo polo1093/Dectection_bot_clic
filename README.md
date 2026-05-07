@@ -150,6 +150,27 @@ Les modes disponibles sont `human`, `linear`, `teleport`, `grid`, `center` et `d
 
 Voir [docs/real-test-environment.md](docs/real-test-environment.md) pour la calibration de la zone et l'interprétation des scores.
 
+## Lanceur depuis le site
+
+Le site peut maintenant lancer des programmes Python placés dans le dossier `mouse_programs/`.
+
+Chaque fichier doit accepter ces arguments CLI :
+
+```bash
+--base-url http://127.0.0.1:8000 --region x1,y1,x2,y2 --count 20 --focus-wait 3
+```
+
+Exemples fournis :
+
+| Fichier | Comportement |
+| --- | --- |
+| `adaptive_spiral_human.py` | Trajectoires courbes, spirales de stabilisation et timings irréguliers |
+| `human_random.py` | Déplacements aléatoires humanisés |
+| `teleport_grid.py` | Clics très rapides sur une grille |
+| `rapid_center.py` | Double-clics rapides au centre |
+
+Depuis l'interface, sélectionnez le fichier, estimez ou saisissez la région écran, puis lancez le programme.
+
 ## Tests automatisés
 
 Installez les dépendances de test :
@@ -182,6 +203,11 @@ Les tests couvrent l'API FastAPI, l'agrégateur, BotD et l'heuristique souris.
 │   └── bot_risk.js            # Collecte et scoring frontend
 ├── docs/
 │   └── real-test-environment.md
+├── mouse_programs/
+│   ├── adaptive_spiral_human.py
+│   ├── human_random.py
+│   ├── rapid_center.py
+│   └── teleport_grid.py
 └── tools/
     ├── human_mouse_test.py    # Script de test simple avec pyclick
     └── real_mouse_lab.py      # Lab de mouvements souris réels
