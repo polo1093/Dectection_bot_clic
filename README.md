@@ -1,83 +1,181 @@
-# Bot risk (browser game) — FastAPI + click-driven scoring (POC)
+# Bot Risk Game
 
-Objectif : afficher dans un jeu navigateur un **risk score bot (0–1)** basé sur :
-- **mouse/pointer dynamics** (mouvements + clics sur une fenêtre glissante)
-- **signaux d’automatisation** côté navigateur (ex: `navigator.webdriver`)
-- **FingerprintJS BotD (open source)** pour détecter l’automation (Selenium/WebDriver/etc.)
+<p align="center">
+  <img src="docs/assets/readme-hero.svg" alt="Aperçu visuel du tableau de bord Bot Risk Game" width="920">
+</p>
 
-Le score est recalculé :
-- **à chaque clic**
-- et **automatiquement** si aucun clic depuis la dernière MAJ (idle refresh)
-- en utilisant une **fenêtre glissante de 10 secondes** de mouvements/clics
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white">
+  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-frontend-F7DF1E?logo=javascript&logoColor=222">
+  <img alt="POC" src="https://img.shields.io/badge/status-POC-f59e0b">
+  <img alt="No training" src="https://img.shields.io/badge/ML-no_training-334155">
+</p>
 
-> Ce projet est un POC “risk scoring” (probabiliste), pas un anti-cheat certifiant.
+**Bot Risk Game** est un POC FastAPI + navigateur qui calcule un score de risque bot entre `0` et `1` pendant une interaction de jeu.  
+Le score combine des signaux d'automatisation du navigateur avec une heuristique sur la dynamique souris/pointeur.
 
-**NO TRAINING** : pas de pipeline d’entraînement, pas de datasets, pas de modèles ML sauvegardés.
-Seules des heuristiques locales sont utilisées côté API.
+> Ce projet produit un score probabiliste. Il sert à déclencher de la friction ou du monitoring, pas à bannir automatiquement un utilisateur.
 
----
+## Aperçu
 
-## Principes produit
+| Fonction | Détail |
+| --- | --- |
+| Score temps réel | Recalcul au clic et rafraîchissement automatique en idle |
+| Fenêtre glissante | Analyse des mouvements et clics sur les 10 dernières secondes |
+| Multi-signaux | BotD, `navigator.webdriver`, plugins, langues, vitesse, trajectoire, régularité |
+| Privacy-by-design | Le front envoie des features agrégées, pas la trajectoire brute |
+| Sans entraînement | Pas de dataset, pas de pipeline ML, pas de modèle sauvegardé |
 
-- **Adversarial** : un bot avancé peut imiter des trajectoires humaines. Le score sert à déclencher de la friction (rate-limit, step-up), pas à bannir directement.
-- **Privacy-by-design** : le front ne transmet pas la trajectoire brute, seulement des **features agrégées**.
-- **Décision** : évite le binaire. Utilise des seuils et/ou une agrégation temporelle (EMA) si nécessaire.
-- **Multi-signaux** : le score global combine BotD (automation) + cinématique souris (heuristique).
+<p align="center">
+  <img src="docs/assets/scoring-pipeline.svg" alt="Pipeline de scoring bot risk" width="860">
+</p>
 
----
+## Interface
+
+<p align="center">
+  <img src="docs/assets/app-preview.svg" alt="Aperçu de l'interface Bot Risk Game" width="920">
+</p>
+
+L'interface affiche la zone de jeu à gauche et un panneau de scoring à droite. Le panneau résume la probabilité de bot, les signaux détectés et les dernières mesures.
+
+## Comment ça marche
+
+1. Le navigateur collecte des événements `pointermove`, `pointerdown`, `pointerup` et `click`.
+2. Le script frontend calcule des features agrégées : vitesse moyenne, variance, angles, straightness, ratio d'événements trusted.
+3. BotD et quelques signaux d'environnement détectent les contextes d'automatisation.
+4. L'API FastAPI reçoit le payload sur `POST /api/score`.
+5. L'agrégateur combine les détecteurs et renvoie une probabilité de bot.
+6. L'overlay met à jour le pourcentage, le statut et l'historique.
 
 ## Installation
 
 ```bash
 python -m venv .venv
-# Windows:
-# .venv\Scripts\activate
-# Linux/mac:
-# source .venv/bin/activate
+```
+
+Windows :
+
+```bash
+.venv\Scripts\activate
+```
+
+Linux / macOS :
+
+```bash
+source .venv/bin/activate
+```
+
+Puis :
+
+```bash
 pip install -r requirements.txt
 ```
 
-## Lancer le serveur
+## Lancer le projet
 
 ```bash
 python run_server.py
 ```
 
-Ou directement via Uvicorn :
+Ou directement avec Uvicorn :
 
 ```bash
 uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
-## Test humain (pyclick)
+Ouvrez ensuite :
 
-Installer les dépendances du script :
+```text
+http://127.0.0.1:8000
+```
+
+## API
+
+| Méthode | Route | Description |
+| --- | --- | --- |
+| `GET` | `/` | Page de démonstration |
+| `GET` | `/api/health` | Healthcheck |
+| `POST` | `/api/score` | Score heuristique à partir des features frontend |
+| `GET` | `/api/telemetry?session_id=...&limit=...` | Derniers scores en JSON |
+
+Exemple de réponse :
+
+```json
+{
+  "bot_probability": 0.72,
+  "model": "combo_v1",
+  "raw_score": 0.72,
+  "signals": {
+    "mouse_heuristic_v1": {
+      "score": 0.41,
+      "raw": {}
+    },
+    "botd_v2": {
+      "score": 0.72,
+      "raw": {}
+    }
+  }
+}
+```
+
+## Test humain automatisé
+
+Installez les dépendances du script :
 
 ```bash
 pip install pyclick requests
 ```
 
-Lancer le script (après avoir ouvert la page du jeu dans le navigateur) :
+Lancez le script après avoir ouvert la page dans le navigateur :
 
 ```bash
 python tools/human_mouse_test.py --region 100,200,900,800 --n-clicks 5
 ```
 
-`REGION` correspond à la zone cliquable du jeu (coordonnées écran `x1,y1,x2,y2`).
-Pour calibrer, utilisez un outil d’info de coordonnées de souris de votre OS ou un overlay de debug,
-et assurez-vous que la zone couvre uniquement la zone de jeu.
+`REGION` correspond à la zone cliquable du jeu, au format écran `x1,y1,x2,y2`.  
+Pour calibrer proprement, utilisez un outil de coordonnées souris et ciblez uniquement la zone de jeu.
 
-## Limitations / false positives
+## Structure
 
-- BotD cible surtout l’automation (Selenium/WebDriver, headless, etc.), mais certains environnements verrouillés
-  ou atypiques peuvent déclencher des signaux.
-- La cinématique souris est probabiliste : un utilisateur “très régulier” peut paraître suspect, et un bot avancé
-  peut imiter un comportement humain.
+```text
+.
+├── app.py                     # API FastAPI et endpoints
+├── run_server.py              # Lancement local
+├── detectors/
+│   ├── aggregator.py          # Combinaison des détecteurs
+│   ├── botd_v2.py             # Signal BotD / automation
+│   └── heuristic_mouse_v1.py  # Heuristiques souris
+├── static/
+│   ├── index.html             # Démo navigateur
+│   ├── style.css              # Présentation de la page
+│   └── bot_risk.js            # Collecte et scoring frontend
+└── tools/
+    └── human_mouse_test.py    # Script de test avec pyclick
+```
 
-## API
+## Points forts
 
-- `POST /api/score` : scoring heuristique.
-- `GET /api/health` : healthcheck.
-- `GET /api/telemetry?session_id=...&limit=...` : derniers scores (liste JSON).
+- Architecture simple à comprendre et à modifier.
+- Bon découpage entre interface, API et détecteurs.
+- Approche prudente : le projet parle de risque, pas de vérité absolue.
+- Bonne base pour ajouter une agrégation temporelle, des seuils métier ou un tableau de bord.
 
-Aucun endpoint `/api/train` ou `/api/collect/human` n’est fourni ni requis.
+## Limites
+
+- Un bot avancé peut imiter des trajectoires humaines.
+- BotD cible surtout Selenium, WebDriver, headless et autres signaux d'automatisation connus.
+- Certains environnements verrouillés ou atypiques peuvent créer des faux positifs.
+- La cinématique souris reste probabiliste : elle doit être utilisée avec des seuils, du contexte et de la friction progressive.
+
+## Idées d'amélioration
+
+- Ajouter une EMA pour lisser le score dans le temps.
+- Stocker la télémétrie dans SQLite pour comparer plusieurs sessions.
+- Ajouter des seuils configurables : `low`, `medium`, `high`.
+- Afficher un mini graphique d'évolution du score dans l'overlay.
+- Ajouter des tests unitaires sur les détecteurs.
+
+## Licence
+
+À définir.
