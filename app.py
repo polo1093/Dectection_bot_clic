@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
+import subprocess
+import sys
 import threading
 import time
 from typing import Any, Deque, Dict, Optional
@@ -17,6 +19,7 @@ from detectors.botd_v2 import BotdV2
 from detectors.heuristic_mouse_v1 import HeuristicMouseV1
 
 APP_DIR = Path(__file__).resolve().parent
+MOUSE_PROGRAM_DIR = APP_DIR / "mouse_programs"
 app = FastAPI(title="Bot risk (browser game) — heuristic scoring")
 
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -51,9 +54,29 @@ class FeaturePayload(BaseModel):
     reason: Optional[str] = None
 
 
+class MouseProgramRunPayload(BaseModel):
+    filename: str = Field(..., min_length=1, max_length=120)
+    region: str = Field(..., pattern=r"^\d+,\d+,\d+,\d+$")
+    count: int = Field(20, ge=1, le=100)
+    focus_wait: float = Field(3.0, ge=0.0, le=30.0)
+    timeout: float = Field(90.0, ge=5.0, le=600.0)
+    base_url: str = Field("http://127.0.0.1:8000", min_length=1, max_length=200)
+
+
 aggregator = Aggregator([HeuristicMouseV1(), BotdV2()])
 telemetry_events: Deque[Dict[str, Any]] = deque(maxlen=200)
 telemetry_lock = threading.Lock()
+mouse_program_lock = threading.Lock()
+
+
+def resolve_mouse_program(filename: str) -> Path:
+    if filename != Path(filename).name or not filename.endswith(".py"):
+        raise ValueError("Invalid mouse program filename")
+    path = (MOUSE_PROGRAM_DIR / filename).resolve()
+    root = MOUSE_PROGRAM_DIR.resolve()
+    if root not in path.parents or not path.is_file():
+        raise FileNotFoundError(filename)
+    return path
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -65,6 +88,79 @@ def index() -> Any:
 @app.get("/api/health")
 def health() -> Dict[str, Any]:
     return {"ok": True}
+
+
+@app.get("/api/mouse-programs")
+def list_mouse_programs() -> list[Dict[str, Any]]:
+    MOUSE_PROGRAM_DIR.mkdir(exist_ok=True)
+    programs = []
+    for path in sorted(MOUSE_PROGRAM_DIR.glob("*.py")):
+        if path.name.startswith("_"):
+            continue
+        stat = path.stat()
+        programs.append(
+            {
+                "filename": path.name,
+                "size": stat.st_size,
+                "modified": stat.st_mtime,
+            }
+        )
+    return programs
+
+
+@app.post("/api/mouse-programs/run")
+def run_mouse_program(payload: MouseProgramRunPayload) -> Dict[str, Any]:
+    try:
+        program_path = resolve_mouse_program(payload.filename)
+    except FileNotFoundError:
+        return {"ok": False, "error": "program_not_found"}
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+
+    acquired = mouse_program_lock.acquire(blocking=False)
+    if not acquired:
+        return {"ok": False, "error": "program_already_running"}
+
+    started_at = time.time()
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(program_path),
+                "--base-url",
+                payload.base_url,
+                "--region",
+                payload.region,
+                "--count",
+                str(payload.count),
+                "--focus-wait",
+                str(payload.focus_wait),
+            ],
+            cwd=str(APP_DIR),
+            capture_output=True,
+            text=True,
+            timeout=payload.timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "ok": False,
+            "error": "timeout",
+            "stdout": exc.stdout or "",
+            "stderr": exc.stderr or "",
+            "duration": time.time() - started_at,
+        }
+    finally:
+        mouse_program_lock.release()
+
+    return {
+        "ok": completed.returncode == 0,
+        "filename": payload.filename,
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "duration": time.time() - started_at,
+    }
 
 
 @app.post("/api/score")
