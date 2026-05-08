@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi import Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from detectors.aggregator import Aggregator
 from detectors.botd_v2 import BotdV2
@@ -61,8 +61,15 @@ class MouseProgramRunPayload(BaseModel):
     region: str = Field(..., pattern=r"^-?\d+,-?\d+,-?\d+,-?\d+$")
     count: int = Field(20, ge=1, le=100)
     focus_wait: float = Field(3.0, ge=0.0, le=30.0)
-    timeout: float = Field(MAX_MOUSE_PROGRAM_SECONDS, ge=1.0, le=MAX_MOUSE_PROGRAM_SECONDS)
+    timeout: float = Field(MAX_MOUSE_PROGRAM_SECONDS, ge=1.0, le=600.0)
     base_url: str = Field("http://127.0.0.1:8000", min_length=1, max_length=200)
+
+    @field_validator("region", mode="before")
+    @classmethod
+    def normalize_region(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return ",".join(part.strip() for part in value.split(","))
+        return value
 
 
 aggregator = Aggregator([HeuristicMouseV1(), BotdV2()])
