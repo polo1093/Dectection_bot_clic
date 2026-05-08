@@ -164,10 +164,12 @@ Exemples fournis :
 
 | Fichier | Comportement |
 | --- | --- |
+| `linear_sweep_clicks.py` | Balayage linéaire simple et régulier |
+| `pyautogui_moveto_down_up.py` | Déplacement PyAutoGUI `moveTo`, puis clic gauche `mouseDown` / `mouseUp` |
 | `adaptive_spiral_human.py` | Trajectoires courbes, spirales de stabilisation et timings irréguliers |
-| `human_random.py` | Déplacements aléatoires humanisés |
-| `teleport_grid.py` | Clics très rapides sur une grille |
 | `rapid_center.py` | Double-clics rapides au centre |
+| `teleport_grid.py` | Clics très rapides sur une grille |
+| `obvious_bot_api.py` | Envoi de signaux synthétiques clairement automatisés vers l'API |
 
 Depuis l'interface, sélectionnez le fichier, estimez ou saisissez la région écran, puis lancez le programme.
 
@@ -204,10 +206,13 @@ Les tests couvrent l'API FastAPI, l'agrégateur, BotD et l'heuristique souris.
 ├── docs/
 │   └── real-test-environment.md
 ├── mouse_programs/
+│   ├── linear_sweep_clicks.py
+│   ├── pyautogui_moveto_down_up.py
 │   ├── adaptive_spiral_human.py
-│   ├── human_random.py
 │   ├── rapid_center.py
-│   └── teleport_grid.py
+│   ├── teleport_grid.py
+│   ├── obvious_bot_api.py
+│   └── human_random.py
 └── tools/
     ├── human_mouse_test.py    # Script de test simple avec pyclick
     └── real_mouse_lab.py      # Lab de mouvements souris réels
