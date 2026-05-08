@@ -68,7 +68,8 @@ def test_score_returns_signals_and_stores_telemetry(client: TestClient) -> None:
     body = response.json()
     assert body["model"] == "combo_v1"
     assert body["bot_probability"] == 0.18
-    assert set(body["signals"]) == {"mouse_heuristic_v1", "botd_v2"}
+    assert set(body["signals"]) == {"mouse_heuristic_v1", "botd_v2", "external_fe_bot_v1"}
+    assert body["signals"]["external_fe_bot_v1"]["score"] == 0.0
 
     telemetry = client.get("/api/telemetry", params={"session_id": "session-a"})
     assert telemetry.status_code == 200

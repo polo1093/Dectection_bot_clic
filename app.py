@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from detectors.aggregator import Aggregator
 from detectors.botd_v2 import BotdV2
+from detectors.external_fe_bot_v1 import ExternalFeBotV1
 from detectors.heuristic_mouse_v1 import HeuristicMouseV1
 
 APP_DIR = Path(__file__).resolve().parent
@@ -40,6 +41,9 @@ class FeaturePayload(BaseModel):
     mean_abs_turn: float
     trusted_ratio: float = Field(..., ge=0.0, le=1.0)
     pointer_type: Optional[str] = None
+    duration_ms: Optional[float] = None
+    mousemove_count: Optional[float] = None
+    mousemove_teleport_count: Optional[float] = None
 
     # minimal “automation / environment” signals (no training, just heuristics)
     webdriver: Optional[bool] = None
@@ -72,7 +76,7 @@ class MouseProgramRunPayload(BaseModel):
         return value
 
 
-aggregator = Aggregator([HeuristicMouseV1(), BotdV2()])
+aggregator = Aggregator([HeuristicMouseV1(), BotdV2(), ExternalFeBotV1()])
 telemetry_events: Deque[Dict[str, Any]] = deque(maxlen=200)
 telemetry_lock = threading.Lock()
 mouse_program_lock = threading.Lock()

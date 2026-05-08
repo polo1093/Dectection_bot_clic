@@ -173,6 +173,40 @@ Exemples fournis :
 
 Depuis l'interface, sélectionnez le fichier, estimez ou saisissez la région écran, puis lancez le programme.
 
+## Détecteur externe ML optionnel
+
+MouseRisk Lab peut interroger un modèle externe déjà entraîné exposé par une API FastAPI compatible avec `kim-daehyun/bot-serving`.
+
+Lancez `bot-serving` sur le port `8001`, avec une route disponible sur :
+
+```text
+http://127.0.0.1:8001/predict/fe
+```
+
+Le détecteur `external_fe_bot_v1` envoie les features agrégées `duration_ms`, `mousemove_count` et `mousemove_teleport_count` à cette route. Il est optionnel : si l'API externe est indisponible, MouseRisk Lab continue de fonctionner et le signal externe retourne un score `0.0` avec un statut d'erreur.
+
+Vous pouvez remplacer l'URL cible avec la variable d'environnement :
+
+```bash
+EXTERNAL_FE_BOT_URL=http://127.0.0.1:8001/predict/fe
+```
+
+Le dépôt `bot-serving` peut être placé dans `external/bot-serving`. Dans ce cas, `run_server.py` le lance automatiquement en parallèle sur le port `8001` avec son environnement virtuel local si `external/bot-serving/.venv` existe.
+
+Vous pouvez aussi fournir une commande personnalisée :
+
+```powershell
+$env:EXTERNAL_FE_BOT_CWD="C:\chemin\vers\bot-serving"
+$env:EXTERNAL_FE_BOT_CMD="uvicorn app:app --host 127.0.0.1 --port 8001"
+python run_server.py
+```
+
+Si l'application FastAPI de `bot-serving` est exposée par `main.py`, utilisez plutôt :
+
+```powershell
+$env:EXTERNAL_FE_BOT_CMD="uvicorn main:app --host 127.0.0.1 --port 8001"
+```
+
 ## Tests automatisés
 
 Installez les dépendances de test :
