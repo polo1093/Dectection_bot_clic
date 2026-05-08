@@ -58,7 +58,7 @@ def test_index_serves_page(client: TestClient) -> None:
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Bot Risk Game" in response.text
+    assert "MouseRisk Lab" in response.text
 
 
 def test_score_returns_signals_and_stores_telemetry(client: TestClient) -> None:

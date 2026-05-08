@@ -22,7 +22,7 @@ APP_DIR = Path(__file__).resolve().parent
 MOUSE_PROGRAM_DIR = APP_DIR / "mouse_programs"
 MAX_MOUSE_PROGRAM_SECONDS = 15.0
 DEFAULT_MOUSE_CLICK_RATE_HZ = 0.7
-app = FastAPI(title="Bot risk (browser game) — heuristic scoring")
+app = FastAPI(title="MouseRisk Lab — heuristic bot-risk scoring")
 
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 

@@ -1,7 +1,7 @@
-# Bot Risk Game
+# MouseRisk Lab
 
 <p align="center">
-  <img src="docs/assets/readme-hero.svg" alt="Aperçu visuel du tableau de bord Bot Risk Game" width="920">
+  <img src="docs/assets/readme-hero.svg" alt="Aperçu visuel du tableau de bord MouseRisk Lab" width="920">
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
   <img alt="No training" src="https://img.shields.io/badge/ML-no_training-334155">
 </p>
 
-**Bot Risk Game** est un POC FastAPI + navigateur qui calcule un score de risque bot entre `0` et `1` pendant une interaction de jeu.  
+**MouseRisk Lab** est un POC FastAPI + navigateur qui calcule un score de risque bot entre `0` et `1` pendant une interaction de jeu.  
 Le score combine des signaux d'automatisation du navigateur avec une heuristique sur la dynamique souris/pointeur.
 
 > Ce projet produit un score probabiliste. Il sert à déclencher de la friction ou du monitoring, pas à bannir automatiquement un utilisateur.
@@ -34,7 +34,7 @@ Le score combine des signaux d'automatisation du navigateur avec une heuristique
 ## Interface
 
 <p align="center">
-  <img src="docs/assets/app-preview.svg" alt="Aperçu de l'interface Bot Risk Game" width="920">
+  <img src="docs/assets/app-preview.svg" alt="Aperçu de l'interface MouseRisk Lab" width="920">
 </p>
 
 L'interface affiche la zone de jeu à gauche et un panneau de scoring à droite. Le panneau résume la probabilité de bot, les signaux détectés et les dernières mesures.
